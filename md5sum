@@ -1,0 +1,24 @@
+Iso image:
+
+246dcf8dba6fc01e38666f07c2fb3980  DebianDog-Squeeze-hybrid-30.04.2016.iso
+
+
+Extra modules:
+
+e8aef754ccca5ad7b3f95473d03cc78b  00-squeeze-boot-folder.squashfs
+
+f2728f4c5c9a6d263b75385c5bd8b5ca  02-man-doc-info.squashfs
+
+2d65819187189cb28bad006ff0521ee5  024-goffice-lupu-528JP-1.squashfs
+
+2744ae1e812abe666c46067dbc2b94a3  03-squeeze-locale.squashfs
+
+71e324db6ea08b8d635055896b9b4db7  061-DEVX-squeeze.squashfs
+
+bb5b32613d3444a5154981b2d327e3d4  07-virtualbox-light-squeeze.squashfs
+
+3a8adce4d7ceecf2d3badddbe5ca3ea2  09-apt-file-debdir-aptitude-squeeze.squashfs
+
+fae4dc9ca02be14c435e4898b9c2d5de  09-squeeze-repo-2016.04.30.squashfs
+
+00c74a024b749cc17e562da2480b9703  firefox-portable_29.0.0.0_i386.deb
