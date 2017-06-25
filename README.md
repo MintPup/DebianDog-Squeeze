@@ -6,7 +6,7 @@ DebianDog is very small 32-bit Debian Live CD shaped to look and act like Puppy 
 
 [DebianDog-Squeeze-hybrid-30.04.2016.iso ](https://github.com/DebianDog/Squeeze/releases/tag/v.1.0)
 
-[Extra squashfs modules]()
+[Extra squashfs modules](https://github.com/DebianDog/Squeeze/releases/tag/v.1.1)
 
 [Bugs and fixes information](https://github.com/DebianDog/Squeeze/blob/master/Bugs-and-Fixes.md)
 
