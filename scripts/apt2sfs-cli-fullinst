@@ -1,30 +1,50 @@
 #!/bin/bash
 
+# From fredx181 for DebianDog.
 # april 12 2015 apt2sfs version 1.0.4, Fred: added /tmp and / to the choice of where to create working dir and module.
+#
+# 20160918 saintless - Changed xz compression to gzip, "xmessage" to "echo", "xterm" to "x-terminal-emulator".
+#          xhost +local: runs only in X session now. Workaround for suid-root problem running as user from coonsole.
+#          Fix in case remastering with resolvconf package. Information about the author of zerosize idea and function. 
+#          My thanks to Daniel Baumann! DebianDog wouldn't exist without his work: https://lists.debian.org/debian-live/2015/11/msg00024.html
+# Depends: x11-utils, x11-xserver-utils, findutils, unionfs-fuse, coreutils, mount, procps, sed, squashfs-tools, apt, x-terminal-emulator
+# 20170628 saintless: choose drive -wo mod
+#          License GPLv3 according to:
+#          https://github.com/DebianDog/Wheezy/blob/master/Scripts-License.md
+#          https://github.com/DebianDog/Wheezy/blob/master/Credits.md
+#          Script source is included in /usr/local/bin inside DebianDog-Wheezy-jwm_icewm-2015-09-02-PAE.iso
+#          https://github.com/DebianDog/Squeeze/blob/c3df7362e9471df46580c4f76ce928778326a984/scripts/apt2sfs-cli-fullinst
+
+
 
 sudo -K
 
+if [[ `pstree | grep xinit` ]]; then
+echo "Active X session."
    if [ -z `which gsu` ]; then
-if [ "`whoami`" != "root" ]; then tty -s; if [ $? -ne 0 ]; then exec gksu xterm -e "$0" "$@"; exit; else exec sudo xterm -e "$0" "$@"; exit; fi; else tty -s; if [ $? -ne 0 ]; then exec xterm -e "$0" "$@"; exit; fi; fi
+if [ "`whoami`" != "root" ]; then tty -s; if [ $? -ne 0 ]; then exec x-terminal-emulator -e sudo x-terminal-emulator -e "$0" "$@"; exit; else exec sudo x-terminal-emulator -e "$0" "$@"; exit; fi; else tty -s; if [ $? -ne 0 ]; then exec x-terminal-emulator -e "$0" "$@"; exit; fi; fi
    else
-if [ "`whoami`" != "root" ]; then tty -s; if [ $? -ne 0 ]; then exec gsu xterm -e "$0" "$@"; exit; else exec sudo xterm -e "$0" "$@"; exit; fi; else tty -s; if [ $? -ne 0 ]; then exec xterm -e "$0" "$@"; exit; fi; fi
+if [ "`whoami`" != "root" ]; then tty -s; if [ $? -ne 0 ]; then exec gsu x-terminal-emulator -e "$0" "$@"; exit; else exec sudo x-terminal-emulator -e "$0" "$@"; exit; fi; else tty -s; if [ $? -ne 0 ]; then exec x-terminal-emulator -e "$0" "$@"; exit; fi; fi
    fi 
+   
+   exe=$(basename $0)
 
-exe=$(basename $0)
-
-sudopid="$(ps -eo pid,cmd | grep -w "sudo $exe\|sudo $SUDO_COMMAND" | grep -v grep | grep -v "sudo xterm" | grep -v "sudo -S" | awk '{ print $1 }')"
+sudopid="$(ps -eo pid,cmd | grep -w "sudo $exe\|sudo $SUDO_COMMAND" | grep -v grep | grep -v "sudo x-terminal-emulator" | grep -v "sudo -S" | awk '{ print $1 }')"
 echo $sudopid
 [ "$sudopid" ] && echo -e "\e[0;33mPlease run without sudo, e.g. $SUDO_COMMAND,\nExiting now...\033[0m" && exit
 
+else   #20160918 saintless - it doesn't work from console as user without this:
+echo "No active X session."
+if [ "`whoami`" != "root" ]; then tty -s; if [ $? -ne 0 ]; then exec "$0" "$@"; exit; else exec sudo "$0" "$@"; exit; fi; else tty -s; if [ $? -ne 0 ]; then exec "$0" "$@"; exit; fi; fi 
+fi
+
 if [ -z `which unionfs-fuse` ]; then
-	msg="You don't have unionfs-fuse installed.\nIt's a dependency of this program.\n Please install it first."
-echo -e "\e[0;33m$msg\033[0m"
-	xmessage "`echo -e $msg`"
+echo "You don't have unionfs-fuse installed. Please install it first."
 exit 0
 fi
 
 echo
-echo -e "\e[0;32m    *** Setup apt2sfs (for full install) ***\033[0m"
+echo -e "\e[0;32m                         *** apt2sfs ***\033[0m"
 echo -e "  Create module from temporary installed package(s) by apt-get. \n Note: These packages will not be registered by dpkg.  \n Depending on the sort of application(s) it may work or not. \n For example an application depending on startup at boot will not work. \n The package(s) will be installed in chroot using 'unionfs-fuse'. \n (but in fact directly into binded write/working directory). \n To make sure there are no traces left behind in the actual running system. "
 echo
 
@@ -32,13 +52,13 @@ devs="$(blkid -o list | grep /dev | grep -E -v "swap|ntfs|vfat|crypt" | sort | c
 echo -e " Choose where to create the working directory and the new module. \n (must be a linux filesystem, NTFS and FAT filesystems are excluded):"
 
 
-echo -e "\e[0;33mAvailable options:\033[0m" $devs /tmp /
-read -p "Type the name of your choice, e.g. sda1, /tmp or /: " DRV
-if [ -z "$(echo "$devs /tmp /" | grep -w "$DRV")" ]; then
+echo -e "\e[0;33mAvailable options:\033[0m" $devs /tmp
+read -p "Type the name of your choice, e.g. sda1, /tmp: " DRV
+if [ -z "$(echo "$devs /tmp" | grep -wo "$DRV")" ]; then
 read -p "$DRV is not available, try again: " DRV
-	if [ -z "$(echo "$devs /tmp /" | grep -w "$DRV")" ]; then
+	if [ -z "$(echo "$devs /tmp" | grep -wo "$DRV")" ]; then
 read -p "$DRV is not available, try again: " DRV
-   if [ -z "$(echo "$devs /tmp /" | grep -w "$DRV")" ]; then
+   if [ -z "$(echo "$devs /tmp" | grep -wo "$DRV")" ]; then
 echo -e "\e[0;31m$DRV is not available, please run again and type a valid name.\033[0m"
 read -s -n 1 -p "Press any key to close . . ."
 exit 0
@@ -94,18 +114,14 @@ rm -rf /.unionfs 2> /dev/null
 	rm -rf "$WORK"
 	rm -f "$SQFS"
 if [ "$?" -eq 0 ]; then 
-msg="Script was interrupted. \nDirectory $WORK has been removed. \nModule $SQFS has been removed. "
-echo -e "\e[0;33m$msg\033[0m"
-	xmessage "`echo -e $msg`"
+echo "Script was interrupted. Directory $WORK has been removed. Module $SQFS has been removed. "
 fi
 	fi
    else
 	if [[ -n "$SFS" && -n "$DRV" ]]; then
 	rm -rf "$WORK"
 if [ "$?" -eq 0 ]; then 
-msg="Script was interrupted. \nDirectory $WORK has been removed. \nModule $SQFS not created. "
-echo -e "\e[0;33m$msg\033[0m"
-	xmessage "`echo -e $msg`"
+echo "Script was interrupted. Directory $WORK has been removed. Module $SQFS not created. "
 fi
 	fi
    fi
@@ -269,6 +285,7 @@ fi
 
 UNIONCREATED=yes
 echo -e "\e[0;36mCopy /etc/resolv.conf to provide network connection.\033[0m"
+rm -f $UNION/etc/resolv.conf && touch $UNION/etc/resolv.conf #20160918 saintless - without this the script fails after remaster with official resolvconf package. The touch command could be removed. Should work without it.
 echo -en "`cat /etc/resolv.conf`" > $UNION/etc/resolv.conf
 #cp -a /etc/resolv.conf $UNION/etc/
 [ $? -eq 0 ] && echo -e "\e[0;32mOK\033[0m"
@@ -282,7 +299,15 @@ mount --bind /sys "$UNION"/sys
 mount -t devpts devpts "$UNION"/dev/pts
 [ $? -eq 0 ] && echo -e "\e[0;32mOK\033[0m"
 sleep 1
-xhost +local:
+#xhost +local:
+
+if [[ `pstree | grep xinit` ]]; then
+echo "Active X session."
+xhost +local:                           # 20160918 saintless - dont run this from console
+else
+echo "No active X session."
+fi
+
 chroot "$UNION" /bin/bash -c check_network
 [ -f "$UNION"/tmp/_exit ] && echo -e "\e[0;31mRestoring now, there were errors\033[0m" && restore 
 chroot "$UNION" /bin/bash -c update_repo
@@ -314,7 +339,9 @@ rm -f "$WORK"/etc/blkid-cache
 rm -f "$WORK"/etc/resolv.conf
 rm -rf "$WORK"/etc/udev/rules.d/70-persistent*
 rm -rf "$WORK"/var/lib/apt
+rm -f "$WORK"/etc/apt/sources.list
 
+# The zerosize man,doc,info idea and function is from Jbv's  FoxyRoxyLinux remastering script (http://foxyroxylinux.com):
 zerosize() {
   find $* 2> /dev/null | while read file; do
     echo -n "."
@@ -354,7 +381,7 @@ echo -e "\e[0;36mCreating $SFS.squashfs....\033[0m"
 #trap "killall mksquashfs; exit" 0 1 2 3 15;
 #trap "killall mksquashfs; rm -f "$SFS".squashfs; exit" SIGHUP SIGINT SIGTERM
 
-mksquashfs "$WORK" "$SQFS" -comp xz -b 1M -Xbcj x86
+mksquashfs "$WORK" "$SQFS"
 
 # Remove working directory?
 read -p "Remove working directory $WORK ? (Y/n)?" choice
