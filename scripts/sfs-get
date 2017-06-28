@@ -1,10 +1,19 @@
 #!/bin/bash
 
+# From fredx181 for DebianDog.
+# 20170628 saintless: HOSTDIR= changed.
+#          License GPLv3 according to:
+#          https://github.com/DebianDog/Wheezy/blob/master/Scripts-License.md
+#          https://github.com/DebianDog/Wheezy/blob/master/Credits.md
+#          Script source is included in /usr/local/bin inside DebianDog-Squeeze-hybrid-30.04.2016.iso
+#          https://github.com/DebianDog/Squeeze/blob/ea369f17167823a253748d88b23df7eda8491327/scripts/sfs-get
+
+
 [ "`whoami`" != "root" ] && exec gsu ${0}
 
 # Variables for host directory and contents file:
 #HOSTDIR="https://googledrive.com/host/0B8P7qC27sushWHg2VFB6QTRJLW8/DebianDog-Wheezy/Extra-Modules"
-HOSTDIR="https://github.com/MintPup/DebianDog-Squeeze/releases/download/v0.1/"
+HOSTDIR="https://github.com/DebianDog/Squeeze/releases/download/v.1.1/"
 CONTENTFILE="sfs.txt"
 
 # Set GUI variables up
