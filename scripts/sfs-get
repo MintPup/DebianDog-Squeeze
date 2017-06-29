@@ -7,6 +7,10 @@
 #          https://github.com/DebianDog/Wheezy/blob/master/Credits.md
 #          Script source is included in /usr/local/bin inside DebianDog-Squeeze-hybrid-30.04.2016.iso
 #          https://github.com/DebianDog/Squeeze/blob/ea369f17167823a253748d88b23df7eda8491327/scripts/sfs-get
+# 20170629 saintles: change select folder message and disable multiple download selection - only last selected
+#          file is downloaded in the selected folder. Its download starts too early according to the progress bar.
+#          issue screenshot: http://i63.tinypic.com/4v2s15.jpg
+#          Maybe caused by old yad version in squeeze or fixed in newer versions but I will keep single download.
 
 
 [ "`whoami`" != "root" ] && exec gsu ${0}
@@ -30,7 +34,7 @@ IMAGE="browser-dload"                    # window image (appears in dialog)
 cd /tmp
 wget --no-check-certificate "$HOSTDIR"/$CONTENTFILE -O $CONTENTFILE #github mod.
 ALL=`cat /tmp/$CONTENTFILE`
-LIST=$(yad --separator=" " --image="application-x-squashfs" --image-on-top --center --height 500 --width="500" --list --title="Download SFS module" --multiple --text=" Download SFS modules (.squashfs or .sfs). \n Select (multiple) items to download." --column " Available Modules" $ALL --button="gtk-cancel:1" --button="gtk-ok:0")
+LIST=$(yad --separator=" " --image="application-x-squashfs" --image-on-top --center --height 500 --width="500" --list --title="Download SFS module" --text=" Download SFS modules (.squashfs or .sfs). \n Select only one item to download." --column " Available Modules" $ALL --button="gtk-cancel:1" --button="gtk-ok:0")
 ret=$?
 [[ $ret -ne 0 ]] && exit 1
 echo $LIST
@@ -49,11 +53,11 @@ fi
 URILIST="`echo "$LIST" | sed "s,^,$HOSTDIR/," | tr '\n' ' '`"
 
 # Select folder to download to:
-SAVEFOLDER=$(yad  --center --image="application-x-squashfs" --image-on-top --title="Select folder to download SFS modules" --file --height=600 --width=800 --text=" Select folder to download SFS modules to" )
+SAVEFOLDER=$(yad  --center --image="application-x-squashfs" --image-on-top --title="Select folder to download SFS modules" --file --height=600 --width=800 --text=" Select/mark folder with single click to download SFS modules to" )
 ret=$?
 [[ $ret -ne 0 ]] && exit 1
 
-MAXDLS="5" # set maximum number of simultaneous downloads
+MAXDLS="1" # set maximum number of simultaneous downloads
 
 # download file and extract progress, speed and ETA from wget
 # we use sed regex for this
