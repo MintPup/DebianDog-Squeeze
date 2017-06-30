@@ -16,5 +16,29 @@ deb http://archive.debian.org/backports.org squeeze-backports-sloppy main contri
 **2.** Some scripts changes:
 https://github.com/DebianDog/Squeeze/tree/master/scripts
 
-**3.**
+**3.** Remove gdrive-get (doesn't work anymore).
+
+**All fixes above included in [debdog-squeeze-mp1_0.0.1_i386.deb](https://github.com/DebianDog/Squeeze/releases/download/v.1.0/debdog-squeeze-mp1_0.0.1_i386.deb)
+
+I don't see any reason to update the iso image yet. It is useful the way it is. Just install the above maintain pack deb. What it does you can read inside the postinst scripts:
+
+```
+#!/bin/sh
+
+mv -f -t /etc/apt /opt/temp/sources.list
+mv -f -t /usr/local/bin/ /opt/temp/apt2sfs-cli-fullinst
+mv -f -t /opt/bin /opt/temp/ffmpeg2sfs
+mv -f -t /usr/share/applications /opt/temp/ffmpeg2sfs.desktop
+mv -f -t /opt/bin /opt/temp/sfs-get
+rmdir /opt/temp
+
+rm -f /usr/share/menu/gdrive-get
+rm -f /usr/share/applications/gdrive-get.desktop
+rm -f /opt/bin/gdrive-get
+
+if [ -x "`which update-menus 2>/dev/null`" ]; then
+	update-menus
+fi
+
+```
 
