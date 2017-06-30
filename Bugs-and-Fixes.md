@@ -18,7 +18,7 @@ https://github.com/DebianDog/Squeeze/tree/master/scripts
 
 **3.** Remove gdrive-get (doesn't work anymore).
 
-**All fixes above included in [debdog-squeeze-mp1_0.0.1_i386.deb](https://github.com/DebianDog/Squeeze/releases/download/v.1.0/debdog-squeeze-mp1_0.0.1_i386.deb)
+All fixes above included in [debdog-squeeze-mp1_0.0.1_i386.deb](https://github.com/DebianDog/Squeeze/releases/download/v.1.0/debdog-squeeze-mp1_0.0.1_i386.deb)
 
 I don't see any reason to update the iso image yet. It is useful the way it is. Just install the above maintain pack deb. What it does you can read inside the postinst scripts:
 
@@ -41,4 +41,4 @@ if [ -x "`which update-menus 2>/dev/null`" ]; then
 fi
 
 ```
-
+Probably any new fixes will be provided the same way.
