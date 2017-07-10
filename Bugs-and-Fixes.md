@@ -42,3 +42,7 @@ fi
 
 ```
 Probably any new fixes will be provided the same way.
+
+**4.** Remove programs and scripts from [**mcewanw**](http://murga-linux.com/puppy/viewtopic.php?p=960161#960161)
+
+[His wish will be respected as usual.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/scripts)
