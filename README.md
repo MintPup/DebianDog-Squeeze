@@ -2,7 +2,7 @@
 
 [**Credits and contributors list.**](https://github.com/MintPup/DebianDog_Wheezy/blob/master/Credits.md)
 
-This version will be developed for my own needs only. Don't waste your time downloading my [rubbish efforts](http://murga-linux.com/puppy/viewtopic.php?p=960152#960152) with DebianDog. If you still can find here something useful I'm glad.
+This version will be developed for my own needs only. If you still can find here something useful I'm glad.
 But if you like to change it or develop it in different direction, please - make your own fork.
 
 DebianDog is very small 32-bit Debian Live CD shaped to look and act like Puppy Linux. Debian structure and Debian behaviour are untouched and Debian documentation is 100% valid for DebianDog. You have access to all debian repositories using apt-get or synaptic.
