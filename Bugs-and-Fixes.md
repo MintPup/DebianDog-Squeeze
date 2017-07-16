@@ -47,12 +47,8 @@ Probably any new fixes will be provided the same way.
 
 [His wish will be respected as usual.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/scripts)
 
-
-**4.** Remove programs and scripts from [**mcewanw**](http://murga-linux.com/puppy/viewtopic.php?p=960161#960161)
-
-[His wish will be respected as usual.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/scripts)
-
 Remove chpupsocket, make-xhippo-playlist, exec_desktopfile.awk, precord, pavrecord, domycommand, domyfile, ffconvert (maybe I will make alternative mods to make ffconvert work with debiandog but I don't use it and it is available as deb package for other users install anyway), remove xhippo (here I have to replace the broken default audio-video-radio-player links to alternative scripts).
 
 **5.** Keep xfe with the old file associations but change them in rox to use the command line scripts from [retro-debian](https://github.com/MintPup/Retro-Debian-Sources/tree/master/scripts) modified for dd-squeeze. Make possible to remove gsu, yad, gtkdialog without breaking DebianDog (it is impossible at the moment). This will keep most community work included with option to use CLI alternatives for most scripts.
 
+**6.** Include puppy-boot initrd.gz as option and some changes in [porteus-boot](https://github.com/MintPup/DebianDog-Wheezy/commits/master/porteus-boot/linuxrc) and from [here](https://github.com/MintPup/Puppy-Linux/commits/master/Debian-kernel/init) and [here.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/puppy-boot/init) The installer scripts will need some changes for puppy-boot. Maybe also the remastering scripts.
