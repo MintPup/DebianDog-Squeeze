@@ -790,7 +790,7 @@ do_httpmount ()
 
 							*)
 								log_begin_msg "Trying wget ${url} -O ${dest}/$(basename ${url})"
-								wget "${url}" -O "${dest}/$(basename ${url})"
+								/bin/wget --no-check-certificate "${url}" -O "${dest}/$(basename ${url})" #20170720 saintless - github.com mods (works with ip or https://github.com now): full path to wget and --no-check-certificate - needs libnss_dns.so.2 and latest wget for squeeze
 								;;
 						esac
 					else
@@ -1114,7 +1114,7 @@ setup_unionfs ()
 
 	if [ "${UNIONTYPE}" = "aufs" ]
 	then
-		roopt="rr"
+		roopt="rr+wh" #saintless - suggestion from fredx181 for .wh support loading squashfs modules.
 		noxino_opt="noxino,"
 	elif [ "${UNIONTYPE}" = "unionfs-fuse" ]
 	then
@@ -1482,18 +1482,44 @@ check_dev ()
 				i=$(($i -1))
 		        done
 		fi
-
+#saintless - fromiso= changes for wheezy start:
 		if [ "$ISO_DEVICE" = "/" ]
 		then
-			echo "Warning: device for bootoption isofrom= ($FROMISO) not found.">>/live.log
+			echo "Warning: device for bootoption fromiso= ($FROMISO) not found.">>/boot.log
 		else
-			mkdir /isofrom
-			mount -t auto "$ISO_DEVICE" /isofrom
-			ISO_NAME="$(echo $FROMISO | sed "s|$ISO_DEVICE||")"
-			loopdevname=$(setup_loop "/isofrom/${ISO_NAME}" "loop" "/sys/block/loop*" "" '')
-			devname="${loopdevname}"
+			fs_type=$(get_fstype "${ISO_DEVICE}")
+			if is_supported_fs ${fs_type}
+			then
+				mkdir /live/fromiso
+				mount -t $fs_type "$ISO_DEVICE" /live/fromiso
+
+
+
+					## custom_mountmode: if set, remount /live/fromiso
+					if [ -n "${custom_mountmode}" ]; then
+
+							if [ "$fstype" = "vfat" ]; then
+								custom_mountopts=rw,noatime,umask=000
+							else
+								custom_mountopts=${custom_mountmode}
+							fi
+
+						umount /live/fromiso
+						mount -t ${fstype} -o ${custom_mountopts} "$ISO_DEVICE" /live/fromiso
+
+					fi
+
+
+
+				ISO_NAME="$(echo $FROMISO | sed "s|$ISO_DEVICE||")"
+				loopdevname=$(setup_loop "/live/fromiso/${ISO_NAME}" "loop" "/sys/block/loop*" "" '')
+				devname="${loopdevname}"
+			else
+				echo "Warning: unable to mount $ISO_DEVICE." >>/boot.log
+			fi
 		fi
 	fi
+#saintless - fromiso= changes for wheezy end.
 
 	if [ -z "${devname}" ]
 	then
@@ -1826,6 +1852,7 @@ mountroot ()
 	then
 		mkdir -p /root/live/image
 		mount --move /live/image /root/live/image
+	    mount -o remount,rw /root/live/image #saintless - remount if possible boot partition in rw without persistent option.
 	fi
 
 	# aufs2 in kernel versions around 2.6.33 has a regression:
