@@ -52,3 +52,20 @@ Remove chpupsocket, make-xhippo-playlist, exec_desktopfile.awk, precord, pavreco
 **5.** Keep xfe with the old file associations but change them in rox to use the command line scripts from [retro-debian](https://github.com/MintPup/Retro-Debian-Sources/tree/master/scripts) modified for dd-squeeze. Make possible to remove gsu, yad, gtkdialog without breaking DebianDog (it is impossible at the moment). This will keep most community work included with option to use CLI alternatives for most scripts.
 
 **6.** Include puppy-boot initrd.gz as option and some changes in [porteus-boot](https://github.com/MintPup/DebianDog-Wheezy/commits/master/porteus-boot/linuxrc) and from [here](https://github.com/MintPup/Puppy-Linux/commits/master/Debian-kernel/init) and [here.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/puppy-boot/init) The installer scripts will need some changes for puppy-boot. Maybe also the remastering scripts.
+
+**7.** Many changes in live-boot-2 shared a year ago [here](https://github.com/MintPup/DebianDog-Wheezy/tree/master/live-boot-2) and continued [here](https://github.com/MintPup/DebianDog-Squeeze/tree/master/live-boot-2). For example downloading at top of sda1 (ntfs, ext or vfat) the new [initrd1.img](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd1.img) and [vmlinuz1](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/vmlinuz1) is enough to webboot DebianDog-Squeeze last iso from github using this code (initrd1.img and vmlinuz not inside subfolder example but could be inside live or any name using live-media-path=):
+
+```
+title DD-Squeeze fetch=https://github.com/... (example at top of sda1 - no subfolders)
+root (hd0,0)
+kernel /vmlinuz1 boot=live fetch=https://github.com/DebianDog/Squeeze/releases/download/v.1.0/DebianDog-Squeeze-hybrid-30.04.2016.iso
+initrd /initrd1.img
+```
+Or already downloaded iso from the same partition:
+
+```
+title DebianDog fromiso= (example at top of sda1 - no subfolders)
+root (hd0,0)
+kernel /vmlinuz1 boot=live fromiso=/dev/sda1/DebianDog-Squeeze-hybrid-30.04.2016.iso
+initrd /initrd1.img
+```
