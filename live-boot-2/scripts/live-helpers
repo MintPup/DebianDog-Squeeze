@@ -37,41 +37,16 @@ subdevices ()
 	echo ${r}
 }
 
-is_supported_fs ()
-{
-	fstype="${1}"
-
-	# Validate input first
-	if [ -z "${fstype}" ]
-	then
-		return 1
-	fi
-
-	# Try to look if it is already supported by the kernel
-	if grep -q ${fstype} /proc/filesystems
-	then
-		return 0
-	else
-		# Then try to add support for it the gentle way using the initramfs capabilities
-		modprobe ${fstype}
-		if grep -q ${fstype} /proc/filesystems
-		then
-			return 0
-		# Then try the hard way if /root is already reachable
-		else
-			kmodule="/root/lib/modules/`uname -r`/${fstype}/${fstype}.ko"
-			if [ -e "${kmodule}" ]
-			then
-				insmod "${kmodule}"
-				if grep -q ${fstype} /proc/filesystems
-				then
-					return 0
-				fi
-			fi
-		fi
-	fi
-
-	return 1
+#saintless - this function is from ubuntu initrd.lz scripts/casper-helpers - for persistent on ntfs:
+is_supported_fs () {
+    # FIXME: do something better like the scan of supported filesystems
+    fstype="${1}"
+    case ${fstype} in
+        vfat|iso9660|udf|ext2|ext3|ext4|btrfs|ntfs)
+            return 0
+            ;;
+    esac
+    return 1
 }
 
 get_fstype ()
@@ -87,15 +62,15 @@ get_fstype ()
 	fi
 }
 
-where_is_mounted ()
-{
-	device=${1}
-
-	if grep -q "^${device} " /proc/mounts
-	then
-		# return the first found
-		grep -m1 "^${device} " /proc/mounts | cut -f2 -d ' '
-	fi
+where_is_mounted() {
+    device=$1
+    if grep -q "^$device " /proc/mounts; then
+        mountpoint="$(grep "^$device " /proc/mounts | awk '{print $2; exit}')"
+        grep "^$device " /proc/mounts | read d mountpoint rest
+        echo $mountpoint
+        return 0
+    fi
+    return 1
 }
 
 lastline ()
@@ -260,34 +235,106 @@ setup_loop ()
 	panic "No loop devices available"
 }
 
+#saintless - this function is from ubuntu initrd.lz scripts/casper-helpers - for persistent on ntfs:
 try_mount ()
 {
-	dev="${1}"
-	mountp="${2}"
-	opts="${3}"
-	fstype="${4}"
+    dev="${1}"
+    mountp="${2}"
+    opts="${3}"
 
-	old_mountp="$(where_is_mounted ${dev})"
-
-	if [ -n "${old_mountp}" ]
-	then
-		if [ "${opts}" != "ro" ]
-		then
-			mount -o remount,"${opts}" "${dev}" "${old_mountp}" || panic "Remounting ${dev} ${opts} on ${old_mountp} failed"
-		fi
-
-		mount -o bind "${old_mountp}" "${mountp}" || panic "Cannot bind-mount ${old_mountp} on ${mountp}"
-	else
-		if [ -z "${fstype}" ]
-		then
-			fstype=$(get_fstype "${dev}")
-		fi
-		mount -t "${fstype}" -o "${opts}" "${dev}" "${mountp}" || \
-		( echo "SKIPPING: Cannot mount ${dev} on ${mountp}, fstype=${fstype}, options=${opts}" > live.log && return 0 )
-	fi
+    if where_is_mounted ${dev} > /dev/null; then
+        if [ "${opts}" != "ro" ]; then
+            mount -o remount,"${opts}" ${dev} $(where_is_mounted ${dev}) || panic "Remounting failed"
+            return 0
+        fi
+        mount -o bind $(where_is_mounted ${dev}) ${mountp} || panic "Cannot bind-mount"
+        return 0
+    else
+        mount -t $(get_fstype "${dev}") -o "${opts}" "${dev}" "${mountp}"
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            log_warning_msg "Cannot mount ${dev} on ${mountp}"
+            return 1
+        fi
+        return 0
+    fi
 }
 
-find_cow_device ()
+#saintless - added setup_crypt function. The patch for encrypted save file is from here: https://launchpadlibrarian.net/148175781/luks-persistent-img.ubuntu.patch
+setup_crypt() {
+    # Most of the following stolen from local-top/cryptroot
+    cryptcreate="cryptsetup luksOpen $1 $2"
+    cryptkey="Unlocking the disk $cryptsource ($crypttarget)\nEnter passphrase: "
+    if [ -x /bin/plymouth ] && plymouth --ping; then
+	cryptkeyscript="plymouth ask-for-password --prompt"
+	cryptkey=$(printf "$cryptkey")
+    else
+	cryptkeyscript="/lib/cryptsetup/askpass"
+    fi
+
+    $cryptkeyscript "$cryptkey" | $cryptcreate --key-file=- &&
+    /sbin/udevadm settle
+    if [ -e "/dev/mapper/$2" ]; then
+	echo "/dev/mapper/$2"
+    fi
+}
+
+#saintless - This find_cow_device function is from ubuntu initrd.lz scripts/casper-helpers with the patch above + persistent=nofiles from live-boot option.
+find_cow_device() {
+    pers_label="${1}"
+    cow_backing="/${pers_label}-backing"
+
+    if [ -z "${PERSISTENT_PATH}" ]; then
+        pers_fpath=${pers_label}
+    else
+        pers_fpath=${PERSISTENT_PATH}/${pers_label}
+    fi
+
+    for sysblock in $(echo /sys/block/* | tr ' ' '\n' | grep -v loop); do
+	# do not ever probe floppies, probing nonexistant ones delays the boot to half an hour and longer
+        n=${sysblock##*/}
+        if [ "${n#fd}" != "$n" ]; then
+            continue
+        fi
+
+        for dev in $(subdevices "${sysblock}"); do
+            devname=$(sys2dev "${dev}")
+         
+            if [ "${PERSISTENT}" = "nofiles" ];then
+				# do not mount the device to find for image files
+				# just skip this
+				continue
+			fi     
+            
+            if [ "$(/sbin/blkid -s LABEL -o value $devname 2>/dev/null)" = "${pers_label}" ]; then
+                echo "$devname"
+                return
+            # Do not add any filesystem types here that might be able to
+            # mount a journalled filesystem and replay the journal. Doing so
+            # will cause data loss when a live CD is booted on a system
+            # where filesystems are in use by hibernated operating systems.
+            elif [ "$(get_fstype ${devname})" = "vfat" ] ||  [ "$(get_fstype ${devname})" = "ext2" ] ||  [ "$(get_fstype ${devname})" = "ext3" ] || [ "$(get_fstype ${devname})" = "ext4" ] || [ "$(get_fstype ${devname})" = "ntfs" ]; then
+                mkdir -p "${cow_backing}"
+                try_mount "${devname}" "${cow_backing}" "rw" || continue
+                cow_backing_mp=$(where_is_mounted "${devname}")
+                if [ -e "${cow_backing_mp}/${pers_fpath}" ]; then
+                    # check to see if its a luks devices, this is probably better than get_fstype
+                    if cryptsetup isLuks "${cow_backing_mp}/${pers_fpath}"; then
+			echo $(setup_crypt "${cow_backing_mp}/${pers_fpath}" ${pers_label})
+			return 0
+                    fi                   
+                    echo $(setup_loop "${cow_backing_mp}/${pers_fpath}" "loop" "/sys/block/loop*")
+                    return 0
+                else
+                    umount ${cow_backing_mp} 2> /dev/null
+                fi
+            fi
+        done
+    done
+}
+
+#saintless - This is the original find_cow_device function renamed.
+find_cow_device_original ()
 {
 	# Returns a device containing a partition labeled "${pers_label}" or containing a file named the same way
 	#  in the latter case the partition containing the file is left mounted
