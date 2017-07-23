@@ -38,7 +38,7 @@ do_httpmount ()
 
 							*)
 								log_begin_msg "Trying wget ${url} -O ${dest}/$(basename ${url})"
-								wget "${url}" -O "${dest}/$(basename ${url})"
+                                /bin/wget --no-check-certificate "${url}" -O "${dest}/$(basename ${url})" #20170720 saintless - github.com mods (works with ip or https://github.com now): full path to wget and --no-check-certificate - needs libnss_dns.so.2 and latest wget for squeeze
 								;;
 						esac
 					else
