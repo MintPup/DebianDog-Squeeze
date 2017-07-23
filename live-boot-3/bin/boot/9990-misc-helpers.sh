@@ -410,41 +410,16 @@ storage_devices()
 	done
 }
 
-is_supported_fs ()
-{
-	fstype="${1}"
-
-	# Validate input first
-	if [ -z "${fstype}" ]
-	then
-		return 1
-	fi
-
-	# Try to look if it is already supported by the kernel
-	if grep -q ${fstype} /proc/filesystems
-	then
-		return 0
-	else
-		# Then try to add support for it the gentle way using the initramfs capabilities
-		modprobe -q -b ${fstype}
-		if grep -q ${fstype} /proc/filesystems
-		then
-			return 0
-		# Then try the hard way if /root is already reachable
-		else
-			kmodule="/root/lib/modules/`uname -r`/${fstype}/${fstype}.ko"
-			if [ -e "${kmodule}" ]
-			then
-				insmod "${kmodule}"
-				if grep -q ${fstype} /proc/filesystems
-				then
-					return 0
-				fi
-			fi
-		fi
-	fi
-
-	return 1
+#saintless - this function is from ubuntu initrd.lz scripts/casper-helpers - for persistent on ntfs:
+is_supported_fs () {
+    # FIXME: do something better like the scan of supported filesystems
+    fstype="${1}"
+    case ${fstype} in
+        vfat|iso9660|udf|ext2|ext3|ext4|btrfs|ntfs)
+            return 0
+            ;;
+    esac
+    return 1
 }
 
 get_fstype ()
@@ -656,31 +631,29 @@ setup_loop ()
 	panic "No loop devices available"
 }
 
+#saintless - this function is from ubuntu initrd.lz scripts/casper-helpers - for persistent on ntfs:
 try_mount ()
 {
-	dev="${1}"
-	mountp="${2}"
-	opts="${3}"
-	fstype="${4}"
+    dev="${1}"
+    mountp="${2}"
+    opts="${3}"
 
-	old_mountp="$(where_is_mounted ${dev})"
-
-	if [ -n "${old_mountp}" ]
-	then
-		if [ "${opts}" != "ro" ]
-		then
-			mount -o remount,"${opts}" "${dev}" "${old_mountp}" || panic "Remounting ${dev} ${opts} on ${old_mountp} failed"
-		fi
-
-		mount -o bind "${old_mountp}" "${mountp}" || panic "Cannot bind-mount ${old_mountp} on ${mountp}"
-	else
-		if [ -z "${fstype}" ]
-		then
-			fstype=$(get_fstype "${dev}")
-		fi
-		mount -t "${fstype}" -o "${opts}" "${dev}" "${mountp}" || \
-		( echo "SKIPPING: Cannot mount ${dev} on ${mountp}, fstype=${fstype}, options=${opts}" > boot.log && return 0 )
-	fi
+    if where_is_mounted ${dev} > /dev/null; then
+        if [ "${opts}" != "ro" ]; then
+            mount -o remount,"${opts}" ${dev} $(where_is_mounted ${dev}) || panic "Remounting failed"
+            return 0
+        fi
+        mount -o bind $(where_is_mounted ${dev}) ${mountp} || panic "Cannot bind-mount"
+        return 0
+    else
+        mount -t $(get_fstype "${dev}") -o "${opts}" "${dev}" "${mountp}"
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            log_warning_msg "Cannot mount ${dev} on ${mountp}"
+            return 1
+        fi
+        return 0
+    fi
 }
 
 # Try to mount $device to the place expected by live-boot. If $device
