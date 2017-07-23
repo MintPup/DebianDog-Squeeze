@@ -258,16 +258,23 @@ setup_mapping()
 
 	# Try to get a satisfactory password $crypttries times
 	count=0
+	success=0 #saintless 20170716 http://hmarco.org/bugs/CVE-2016-4484/CVE-2016-4484_cryptsetup_initrd_shell.html
 	while [ $crypttries -le 0 ] || [ $count -lt $crypttries ]; do
 		count=$(( $count + 1 ))
 
 		if [ $count -gt 1 ]; then
 			/bin/sleep 3
 		fi
-
-		if [ $crypttries -gt 0 ] && [ $count -gt $crypttries ]; then
-			message "cryptsetup: maximum number of tries exceeded for $crypttarget"
-			return 1
+		
+#saintless 20170716 http://hmarco.org/bugs/CVE-2016-4484/CVE-2016-4484_cryptsetup_initrd_shell.html
+#		if [ $crypttries -gt 0 ] && [ $count -gt $crypttries ]; then
+#			message "cryptsetup: maximum number of tries exceeded for $crypttarget"
+#			return 1
+        if [$success -eq 0 ]; then
+        message "cryptsetup: maximum number of tries exceeded. Please reboot."
+        while true; do
+                sleep 100
+                done
 		fi
 
 		if [ -z "$cryptkeyscript" ]; then
@@ -322,6 +329,7 @@ setup_mapping()
 		fi
 
 		message "cryptsetup: $crypttarget set up successfully"
+		success=1 #saintless 20170716 http://hmarco.org/bugs/CVE-2016-4484/CVE-2016-4484_cryptsetup_initrd_shell.html
 		break
 	done
 
