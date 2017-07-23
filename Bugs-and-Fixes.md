@@ -69,3 +69,20 @@ root (hd0,0)
 kernel /vmlinuz1 boot=live fromiso=/dev/sda1/DebianDog-Squeeze-hybrid-30.04.2016.iso
 initrd /initrd1.img
 ```
+
+**8.** Live-boot-3 now based on newer version [4.0.2-1](https://github.com/debian-live/live-boot/tree/debian-old-4.0/) with all previous version problems fixed upstream. Included changes shared a year ago [here](https://github.com/MintPup/DebianDog-Wheezy/tree/master/live-boot-3) and continued [here](https://github.com/MintPup/DebianDog-Squeeze/tree/master/live-boot-3). For example downloading at top of sda1 (ntfs, ext or vfat) the new [initrd.img](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd.img) and [vmlinuz1](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/vmlinuz1) is enough to webboot DebianDog-Squeeze last iso from github.com:
+
+```
+title DD-Squeeze fetch=https://github.com/... (example at top of sda1 - no subfolders)
+root (hd0,0)
+kernel /vmlinuz1 boot=live fetch=https://github.com/DebianDog/Squeeze/releases/download/v.1.0/DebianDog-Squeeze-hybrid-30.04.2016.iso
+initrd /initrd.img
+```
+Or already downloaded iso from the same partition:
+
+```
+title DebianDog fromiso= (example at top of sda1 - no subfolders)
+root (hd0,0)
+kernel /vmlinuz1 boot=live fromiso=/dev/sda1/DebianDog-Squeeze-hybrid-30.04.2016.iso
+initrd /initrd.img
+```
