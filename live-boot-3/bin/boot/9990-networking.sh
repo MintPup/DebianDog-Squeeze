@@ -114,60 +114,42 @@ do_netsetup ()
 			fi
 		done
 	else
-		for interface in ${DEVICE}; do
-			ipconfig -t "$ETHDEV_TIMEOUT" ${interface} | tee /netboot-${interface}.config
+	ipconfig ${DEVICE} | tee /netboot.config
+	fi
+	# source relevant ipconfig output
+	OLDHOSTNAME=${HOSTNAME}
+	. /tmp/net-${DEVICE}.conf
+	[ -z ${HOSTNAME} ] && HOSTNAME=${OLDHOSTNAME}
+	export HOSTNAME
 
-			[ -e /run/net-${interface}.conf ] && . /run/net-${interface}.conf
+	if [ -n "${DEVICE}" ]
+	then
+		HWADDR="$(cat /sys/class/net/${DEVICE}/address)"
+	fi
 
-			if [ "$IPV4ADDR" != "0.0.0.0" ]
-			then
-				break
-			fi
+	if [ ! -e "/etc/resolv.conf" ]
+	then
+		echo "Creating /etc/resolv.conf"
+
+		if [ -n "${DNSDOMAIN}" ]
+		then
+			echo "domain ${DNSDOMAIN}" > /etc/resolv.conf
+			echo "search ${DNSDOMAIN}" > /etc/resolv.conf
+		fi
+
+		for i in ${IPV4DNS0} ${IPV4DNS1} ${IPV4DNS1}
+		do
+			echo "nameserver $i" >> /etc/resolv.conf
 		done
 	fi
 
-	for interface in ${DEVICE}
-	do
-		# source relevant ipconfig output
-		OLDHOSTNAME=${HOSTNAME}
-
-		[ -e /run/net-${interface}.conf ] && . /run/net-${interface}.conf
-
-		[ -z ${HOSTNAME} ] && HOSTNAME=${OLDHOSTNAME}
-		export HOSTNAME
-
-		if [ -n "${interface}" ]
-		then
-			HWADDR="$(cat /sys/class/net/${interface}/address)"
-		fi
-
-		if [ ! -e "/etc/resolv.conf" ]
-		then
-			echo "Creating /etc/resolv.conf"
-
-			if [ -n "${DNSDOMAIN}" ]
-			then
-				echo "domain ${DNSDOMAIN}" > /etc/resolv.conf
-				echo "search ${DNSDOMAIN}" >> /etc/resolv.conf
-			fi
-
-			for i in ${IPV4DNS0} ${IPV4DNS1} ${IPV4DNS1}
-			do
-				if [ -n "$i" ] && [ "$i" != 0.0.0.0 ]
-				then
-					echo "nameserver $i" >> /etc/resolv.conf
-				fi
-			done
-		fi
-
-		# Check if we have a network device at all
-		if ! ls /sys/class/net/"$interface" > /dev/null 2>&1 && \
-		   ! ls /sys/class/net/eth0 > /dev/null 2>&1 && \
-		   ! ls /sys/class/net/wlan0 > /dev/null 2>&1 && \
-		   ! ls /sys/class/net/ath0 > /dev/null 2>&1 && \
-		   ! ls /sys/class/net/ra0 > /dev/null 2>&1
-		then
-			panic "No supported network device found, maybe a non-mainline driver is required."
-		fi
-	done
+	# Check if we have a network device at all
+	if ! ls /sys/class/net/"$DEVICE" > /dev/null 2>&1 && \
+	   ! ls /sys/class/net/eth0 > /dev/null 2>&1 && \
+	   ! ls /sys/class/net/wlan0 > /dev/null 2>&1 && \
+	   ! ls /sys/class/net/ath0 > /dev/null 2>&1 && \
+	   ! ls /sys/class/net/ra0 > /dev/null 2>&1
+	then
+		panic "No supported network device found, maybe a non-mainline driver is required."
+	fi
 }
