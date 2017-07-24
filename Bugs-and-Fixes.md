@@ -49,6 +49,95 @@ Probably any new fixes will be provided the same way.
 
 Remove chpupsocket, make-xhippo-playlist, exec_desktopfile.awk, precord, pavrecord, domycommand, domyfile, ffconvert (maybe I will make alternative mods to make ffconvert work with debiandog but I don't use it and it is available as deb package for other users install anyway), remove xhippo (here I have to replace the broken default audio-video-radio-player links to alternative scripts).
 
+Installing this package [debdog-squeeze-mp1_0.0.1-1_i386.deb](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/debdog-squeeze-mp1_0.0.1-1_i386.deb) will remove most scripts and xhippo files replacing the broken default links in /usr/local/bin with alternative scripts.
+The postinstall script content:
+
+```
+#!/bin/sh
+
+mv -f -t /etc/apt /opt/temp/sources.list
+mv -f -t /usr/local/bin/ /opt/temp/apt2sfs-cli-fullinst
+mv -f -t /opt/bin /opt/temp/ffmpeg2sfs
+mv -f -t /usr/share/applications /opt/temp/ffmpeg2sfs.desktop
+mv -f -t /opt/bin /opt/temp/sfs-get
+
+mv -f -t /opt/bin /opt/temp/exec_desktopfile.awk-2
+rm -f /opt/bin/exec_desktopfile.awk
+ln -sf /opt/bin/exec_desktopfile.awk-2 /opt/bin/exec_desktopfile.awk
+
+mv -f -t /opt/bin /opt/temp/chpupsocket2
+rm -f /opt/bin/chpupsocket
+ln -sf /opt/bin/chpupsocket2 /opt/bin/chpupsocket
+
+mv -f -t /opt/bin /opt/temp/audio-player
+ln -sf /opt/bin/audio-player /usr/local/bin/default_audio-player
+
+mv -f -t /opt/bin /opt/temp/video-player
+ln -sf /opt/bin/video-player /usr/local/bin/default_video-player
+ln -sf /opt/bin/video-player /usr/local/bin/defaultmediaplayer
+
+mv -f -t /opt/bin /opt/temp/radio-player
+
+
+mv -f -t /usr/share/mime/packages /opt/temp/freedesktop.org.xml
+update-mime-database /usr/share/mime
+
+rmdir /opt/temp
+
+rm -f /usr/share/menu/gdrive-get
+rm -f /usr/share/applications/gdrive-get.desktop
+rm -f /opt/bin/gdrive-get
+
+xhippo_list () {
+echo "/opt/bin/make-xhippo-playlist
+/opt/bin/run-ddi
+/opt/bin/xhippo
+/opt/bin/xhplay
+/opt/bin/xhrecord
+/opt/bin/xrecord
+/usr/share/menu/xhippo
+/usr/share/menu/xrecord
+/usr/share/applications/xhippo.desktop
+/usr/share/applications/xrecord.desktop
+/usr/share/pixmaps/xhippo.xpm
+/usr/share/pixmaps/mini-record.xpm
+/usr/share/pixmaps/minimize.png
+/usr/share/pixmaps/next.png
+/usr/share/pixmaps/pause.png
+/usr/share/pixmaps/play.png
+/usr/share/pixmaps/prev.png
+/usr/share/pixmaps/refresh.png
+/usr/share/pixmaps/shuffle.png
+/usr/share/pixmaps/stop.png
+/home/puppy/.xhippo
+/etc/skel/.xhippo
+/root/.xhippo
+/root/.xhrecord
+/root/.xrecord
+/opt/apps/xhippo
+" > /tmp/xhippo.txt
+}
+xhippo_list
+
+rm -fr $(cat /tmp/xhippo.txt)
+
+rm -f /tmp/xhippo.txt
+
+if [ -x "`which update-menus 2>/dev/null`" ]; then
+	update-menus
+fi
+
+```
+
+The rest I will remove from terminal:
+
+```
+apt-get purge precord pavrecord domycommand domyfile ffconvert
+apt-get autoremove
+```
+
+Reminder to myself - always make deb package for complicated scripts in the future. Saves much time to remove them properly by uninstalling the deb.
+
 **5.** Keep xfe with the old file associations but change them in rox to use the command line scripts from [retro-debian](https://github.com/MintPup/Retro-Debian-Sources/tree/master/scripts) modified for dd-squeeze. Make possible to remove gsu, yad, gtkdialog without breaking DebianDog (it is impossible at the moment). This will keep most community work included with option to use CLI alternatives for most scripts.
 
 **6.** Include puppy-boot initrd.gz as option and some changes in [porteus-boot](https://github.com/MintPup/DebianDog-Wheezy/commits/master/porteus-boot/linuxrc) and from [here](https://github.com/MintPup/Puppy-Linux/commits/master/Debian-kernel/init) and [here.](https://github.com/MintPup/DebianDog-Wheezy/commits/master/puppy-boot/init) The installer scripts will need some changes for puppy-boot. Maybe also the remastering scripts.
