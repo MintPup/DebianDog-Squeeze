@@ -9,3 +9,9 @@ More for encrypted save file, ntfs support, webboot and fromiso= included change
 https://github.com/MintPup/DebianDog-Wheezy/tree/master/live-boot-2
 
 https://github.com/MintPup/DebianDog-Wheezy/blob/master/live-boot-2/bin/Readme-ntfs.txt
+
+Support for persistent live-rw save file on NTFS partition needs replacing mount and umount with links to busybox v.1.21.1
+and removing /lib/modules/3.2.0-4-486/kernel/fs/ntfs/ntfs.ko + some changes in /scripts/live-helpers functions posted here in 
+DebianDog-Wheeze/live-boot-2/scripts/live-helpers file.
+
+Some more testing shows using the official Squeeze BusyBox v1.17.1 (Debian 1:1.17.1-8+deb6u11) with links to mount and umount also works for ntfs boot and persistent. Instead links using included in the iso /bin/mount from util-linux-ng 2.17.2 (with libblkid and selinux support) and /bin/umount (util-linux-ng 2.17.2) also works.
