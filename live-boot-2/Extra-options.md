@@ -303,4 +303,20 @@ One problem using any save on exit script (save2dir or snapmergepuppy or differe
 But for live-boot this is not real problem because it provides much better way to save on demand without risk to damage your save file/folder content. Read next about this:
 
 
+**Save on demand in multiple folders for frugal install on ext partition:**
 
+This solves the problem I wrote about above. Lets use regular frugal install example this time (but works for perfect full install too) - on ext sda1 inside /live-squeeze with gzip or xz compressed main squashfs and example boot code:
+
+```
+title DebianDog-Squeeze
+ root (hd0,0)
+ kernel /live-squeeze/vmlinuz1 boot=live nofastboot live-media-path=live-squeeze noprompt edd=off
+ initrd /live-squeeze/initrd1.img
+```
+ Using this [next-save](https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/next-save) script each session will be seved in subfolders from /live-squeeze/10.dir to /live-squeeze/99.dir loaded after reboot. The important thing to keep in mind is to keep the main module name starting with 01- and not to use persistent because the save file will be loaded always last as /live/cow and you will re-copy all its content again and again in next save directory which is a waste of space.
+ 
+ How does this solve problems like Xorg or kernel upgrade after reboot? Easy, if you have issues after reboot just rename the last saved session .dir (for example /live-squeeze/15.dir to /live-squeeze/15) and reboot to your previous working saved session. It will be wise not to make too many saves but to remaster regulary and start fresh multiple saves after that when you are happy with your working to the moment system.
+ 
+ All methods above could be combined with persistent save or live-snapshot at the same time with live-boot-2 (2.0.15-1). The possible save combinations are many.
+ 
+ 
