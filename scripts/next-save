@@ -1,0 +1,51 @@
+#!/bin/bash
+# 20170801 saintless for Retro-Debian and DebianDog.
+# Option to save on exit in multiple directories for frugal install on ext partition using aufs.
+# GNU GPL v3 applies. No warranty of any kind.
+
+
+if [ "$(whoami)" != "root" ]; then
+echo "You have to run this script as Superuser."
+exit
+fi
+
+BASE="/live/image/live-squeeze"
+DIR="10.dir"
+
+echo
+echo "For frugal install on EXT partition only !!! "
+echo "Save session in subfolders from 10.dir to 99.dir"
+echo in "$BASE" loaded on next boot.
+echo
+
+read -p "Do you want to continue (y/n)?" choose
+case "$choose" in
+  y|Y ) echo "Continue...";;
+  * ) exit;;
+esac
+
+#NEXT= line source: https://stackoverflow.com/questions/1587059/bash-find-highest-numbered-filename-in-a-directory-where-names-start-with-digit
+NEXT=$(ls "$BASE" | grep ".dir" | sort -rn | awk '{FS="_"; printf "%0d.dir\n",$1+1;exit}')
+
+if [ ! -d "$BASE" ]; then
+echo No "$BASE" found. Change BASE= to your boot folder name.
+exit
+fi
+
+if [ ! -d "$BASE"/"$DIR" ]; then
+echo Saving session in "$BASE"/"$DIR" ...
+mkdir "$BASE"/"$DIR"
+cp -ap /live/cow/* "$BASE"/"$DIR"
+sync
+echo "Done."
+exit
+else
+echo Saving session in "$BASE"/"$NEXT" ...
+echo "$NEXT"
+mkdir "$BASE"/"$NEXT"
+cp -ap /live/cow/* "$BASE"/"$NEXT"
+sync
+echo "Done."
+fi
+
+exit
