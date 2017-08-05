@@ -1,0 +1,54 @@
+#!/bin/bash
+# 20170806 saintless for Retro-Debian and DebianDog.
+# GNU GPL v3 applies. No warranty of any kind.
+# Simple save on demand script for frugal install - live-boot-2 (2.0.15-1 with aufs) - in ext partition in $SAVE using empty squashfs
+# and main squashfs extracted in 01-filesystem.dir folder. Do not use persitent and don't load extra modules.
+# Better alternative to Full install: https://github.com/MintPup/DebianDog-Squeeze/blob/master/live-boot-2/Extra-options.md
+# Could be changed to support save file but I prefer new script for different task and I find folder persistent better for now.
+
+if [ "$(whoami)" != "root" ]; then
+echo "You have to run this script as Superuser!"
+exit
+fi
+
+if  grep -q persistent /proc/cmdline ; then
+echo
+echo "Please, boot without persistent parameter and run the script again."
+echo
+exit
+fi
+
+COW="/live/cow"
+SAVE="/live/image/live-squeeze/01-filesystem.dir" #change to the location with extracted main squashfs.
+
+if [ ! -d "$SAVE" ]; then
+echo "$SAVE" not found.
+exit
+fi
+
+touch "$SAVE"/test.txt || exit 1 #test read-write permissions first.
+rm -f "$SAVE"/test.txt
+
+echo Copying "$COW" over "$SAVE" ...
+
+/bin/cp -ap --remove-destination "$COW"/* "$SAVE"
+sync
+
+
+RMWH=$(find $SAVE -name ".wh.*")
+RMFILE=$(find $SAVE -name ".wh.*" | sed 's/.wh.//')
+
+echo "$RMWH" > /tmp/rm-list.txt
+echo "$RMFILE" >> /tmp/rm-list.txt
+sleep 3 #just in case on low ram machine.
+
+xargs -d '\n' rm -fr < /tmp/rm-list.txt #line source: https://stackoverflow.com/questions/5142429/unix-how-to-delete-files-listed-in-a-file
+
+sync
+
+echo
+echo "All done. List of removed files saved in /tmp/rm-list.txt"
+echo
+
+exit
+
