@@ -1,3 +1,5 @@
+[Continue from here.](https://github.com/MintPup/DebianDog-Wheezy/blob/master/live-boot-2/Extra-options.md)
+
 **1.** Save on Exit in save file or directory:
 
 This function in /scripts/live (live-boot-2) and /bin/boot/9990-misk-helpers.sh (live-boot-3 and 4) caught my eye:
@@ -29,7 +31,7 @@ And all changes will be saved in /live/image/live/changes.dir
 I will add some examples in the boot methods posts and live-boot documentation in the wiki later.
 
 Edit: 2016-07-14: The problem is the above method doesn't support deleted files. Since changes.dir is loaded as second read-only module all files deleted from changes.dir will be marked as .wh files in /live/cow
-Changing the paths in snapmergepuppy script to point /live/image/live/changes.dir works to preserve deleted files. Quick mod in directory names and locations for live-boot in snapmergepuppy script (should be easy to make it support live-boot and  porteus-boot in the same script). I will fix this when I have time if I can't find simpler way to update deleted files in changes.dir.
+Changing the paths in snapmergepuppy script to point /live/image/live/changes.dir works to preserve deleted files. Quick mod in directory names and locations for live-boot in snapmergepuppy script (should be easy to make it support live-boot and  porteus-boot in the same script). I will fix this when I have time if I can't find simpler way to update deleted files in changes.dir (done: read below about **Simple save on demand in save folder on ext partition:**).
 
 ```
 #!/bin/bash
@@ -281,3 +283,24 @@ Now we can remove the kernel pinning in /live/changes.dir/etc/apt/preferences an
 
 This works well with live-boot-3,4 without persistence save file. Unfortunately adding persistence save file (in case you don't have much RAM) fails the boot process (works fine with live-boot-2). I suspect the problem is related with the wrong modules loading in live-boot-3,4 using persistence with more than one squashfs module (from Z to A instead from A to Z). Maybe I will try to fix this for live-boot-3,4 but I feel it has many disadvantages compared to live-boot-2, especially when live-boot-2 supports now [encrypted save file](https://github.com/MintPup/DebianDog-Wheezy/commit/c124d939f31415e2ef3c641c36ddd55e42431695#diff-5ecdb4a03b89fc9471978e363fef3f1b) and [persistent save file on NTFS boot partition](https://github.com/MintPup/DebianDog-Wheezy/commit/a9d2875fffda59f81940629fb9825b93a599779e#diff-5ecdb4a03b89fc9471978e363fef3f1b).
 Live-boot-2 doesn't have any of the problems in later versions and I think it is the most flexible boot and persistent method. I feel patched live-boot-2 deb package with ntfs and encrypted save support is the best option to boot the system with new generated initrd.img after installing the deb. Probabaly universal solution to add flexible persistent options in official Debian/Ubuntu live systems.
+
+**Simple save on demand in save folder on ext partition:**
+
+Extract the content of main squashfs in /live/image/live-squeeze/01-filesystem.dir folder , create 01-empty.squashfs and remove the main squashfs module. Don't use persistent and don't load extra modules. Example boot code:
+
+```
+title DebianDog-Squeeze - empty squashfs + extracted filesystem on ext sda1 in /live-squeeze/01-filesystem.dir
+ root (hd0,0)
+ kernel /live-squeeze/vmlinuz1 boot=live nofastboot live-media-path=live-squeeze noprompt edd=off
+ initrd /live-squeeze/initrd1.img
+```
+
+Using this [save2dir](https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/save2dir) script will save the changes by copying /live/cow over /live-squeeze/01-filesystem.dir and removing .wh. and the real files from /live-squeeze/01-filesystem.dir using /tmp/rm-list.txt list.
+
+
+One problem using any save on exit script (save2dir or snapmergepuppy or different) - you can't undo the changes and sometimes you can't see the problems before rebooting the system. Like upgrading xorg or kernel. For example upgrading Xorg in MintPup leaves you with broken X after reboot on [same old intel GPU.](https://github.com/DebianDog/MintPup-Trusty/commit/a8cf7ad94817d08755261c2cc9d7898f28ac5963) Or in DebianDog-Squeeze and Wheezy the encrypted save support is broken after upgrading the kernel. If you save on demand in this case there is not much you can do to fix the problem except starting fresh again with new persistent or new perfect full install setup.
+
+But for live-boot this is not real problem because it provides much better way to save on demand without risk to damage your save file/folder content. Read next about this:
+
+
+
