@@ -84,7 +84,8 @@ copy_live_to ()
 			if [ -x /bin/rsync ]
 			then
 				echo " * Copying whole medium to RAM" 1>/dev/console
-				rsync -a --progress ${copyfrom}/* ${copyto} 1>/dev/console  # "cp -a" from busybox also copies hidden files
+				mkdir -p ${copyto}/${LIVE_MEDIA_PATH} # 20170809 saintless - using toram copy only /live and its content (useful for hdd or usb frugal install).
+                                rsync -a --progress ${copyfrom}/${LIVE_MEDIA_PATH}/* ${copyto}/${LIVE_MEDIA_PATH} 1>/dev/console  # "cp -a" from busybox also copies hidden files	# 20170809 saintless - using toram copy only /live and its content (useful for hdd or usb frugal install).
 			else
 				mkdir -p ${copyto}/${LIVE_MEDIA_PATH}
 				cp -a ${copyfrom}/${LIVE_MEDIA_PATH}/* ${copyto}/${LIVE_MEDIA_PATH}
