@@ -231,7 +231,7 @@ tmpfs on /run/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=50720k)
 tmpfs on /tmp type tmpfs (rw,nosuid,nodev,relatime)
 ```
 
-Live-boot has many persistent options missing from the official documentation. Multiple directories loading on boot could make possible saving sessions on CD/DVD like in Puppy linux.  This should be possible also with Ubuntu based live systems using casper-boot. Casper also loads directory content on boot from limited testing.
+Live-boot has many persistent options missing from the official documentation. Multiple directories loading on boot could make possible saving sessions on CD/DVD like in Puppy linux - **Edit:** Yes, save on CD/DVD works - read **5.** below or [here](http://murga-linux.com/puppy/viewtopic.php?p=963541&sid=c194a12c283c402ce349c58f083828aa#963541).  This should be possible also with Ubuntu based live systems using casper-boot. Casper also loads directory content on boot from limited testing.
 
 
 **2.** Save file fsck:
@@ -320,3 +320,39 @@ title DebianDog-Squeeze
  All methods above could be combined with persistent save or live-snapshot at the same time with live-boot-2 (2.0.15-1). The possible save combinations are many.
  
  
+**5. Save sessions on CD or DVD:**
+
+Already posted [here](http://murga-linux.com/puppy/viewtopic.php?p=963541&sid=c194a12c283c402ce349c58f083828aa#963541) about DebianDog but will work also with Debian Live. (Just keep in mind /live/cow is changed after live-boot 2.0.15-1 and double mounted. Read **3.** above how to make it visible by unmounting /liv/live/mount/overlay and symlink it as /live/cow for the save session command below with growisofs.)
+
+**Can DebianDog save sessions on CD/DVD?**
+
+Yes, very easy. 
+
+Live-boot-2 provides the best options but works with live-boot-3 also. 
+Better test using RW CD/DVD. 
+
+Burn DebianDog on CD/DVD in multisession mode. 
+
+Boot DebianDog with live boot using toram parameter (you will have to edit manually toram=01-filesystem.squashfs to toram only). This will copy the CD/DVD content to ram loading all .squashfs, folders ending with .dir to ram leaving the CD/DVD disk unmounted. Do some changes and save the session on the CD/DVD using this command in terminal: [command source](http://www.murga-linux.com/puppy/viewtopic.php?p=77031&sid=04417d050f1e926a4195a84dba950aaa#77031)
+
+
+```
+growisofs -M /dev/sr0 -D -R -l -new-dir-mode 0755 -graft-points live/10.dir=/live/cow
+```
+
+This will create /live/10.dir with /live/cow copy inside. 10.dir will be loaded after boot at top of 01-filesystem.squashfs. 
+Save new session using 11.dir, 12.dir etc. You can use as many folders as you wish with live-boot. None of them will use loop device so the options could be unlimited. 
+
+Could be used with porteus-boot using something like [next-save](https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/next-save) with mods to copy the session in RAM, create squashfs and write the squashfs to the CD/DVD. 
+
+I will modify the script later for saving sessions on CD or DVD for DebianDog.
+
+**6. toram** small change:
+
+The **toram** parameter loads whole content of CD/DVD in RAM loading all modules from /live in RAM. The problem is you can't use it for HDD or USB drive install because most probably you have a lot of data on your partition and the RAM size will not be enough to copy all. Reading the code in /scripts/live (live-boot-2) and /bin/boot/9990-toram-todisk.sh (live-boot-3 and later) the problem exists only using rsync and not if you use cp command. But rsync is available and it is the default choice.
+
+With small change in the rsync line in the scripts above **toram** will copy only /live folder content (instead whole medium) to ram loading all modules, and .dir ending folders to ram. It was impossible option for hdd or usb drive frugal install before using toram only parameter. Now works and it is better for CD/DVD boot too. This changes do not affect the **toram=** parameter where you can choose only the main module to be loaded (very useful option in case save on CD/DVD issue and boot with persistent problems).
+
+The changes in live-boot-2 [/scripts/live](https://github.com/MintPup/DebianDog-Squeeze/commit/e34943eb4585eddb1877be655ed6b36911bc9158) and live-boot-3 [/bin/boot/9990-toram-todisk.sh](https://github.com/MintPup/DebianDog-Squeeze/commit/6f24fa1c0c514d69d277704aa90b3f77b38c74a9) scripts. 
+
+
