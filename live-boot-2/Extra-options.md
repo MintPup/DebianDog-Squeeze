@@ -356,3 +356,15 @@ With small change in the rsync line in the scripts above **toram** will copy onl
 The changes in live-boot-2 [/scripts/live](https://github.com/MintPup/DebianDog-Squeeze/commit/e34943eb4585eddb1877be655ed6b36911bc9158) and live-boot-3 [/bin/boot/9990-toram-todisk.sh](https://github.com/MintPup/DebianDog-Squeeze/commit/6f24fa1c0c514d69d277704aa90b3f77b38c74a9) scripts. 
 
 
+**7. fetch=** support to download from github.com and other sites:
+
+Changing the wget line in live-boot-2 (2.0-15-1) /scripts/live or live-boot-3 and later [/bin/boot/9990-mount-http.sh](https://github.com/MintPup/DebianDog-Squeeze/commit/241043f307f1970a30d9a3afcb35c4340fcf4068) and including libnss_dns.so.2 inside initrd makes possible to download the main system module from https://github.com/ and other sites without using the ip adress for the site.
+
+This grub4dos boot code for DebianDog-Squeeze for example works now after downloading [initrd1.img](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd1.img) [vmlinuz1](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/vmlinuz1) at top of sda1 (ext, vfat, ntfs partition):
+
+```
+title DD-Squeeze on sda1 - fetch=https://github.com/...
+root (hd0,0)
+kernel /vmlinuz1 boot=live fetch=https://github.com/DebianDog/Squeeze/releases/download/v.1.0/DebianDog-Squeeze-hybrid-30.04.2016.iso
+initrd /initrd1.img
+```
