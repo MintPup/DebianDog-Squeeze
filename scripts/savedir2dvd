@@ -1,0 +1,186 @@
+#!/bin/sh
+# 20170814 saintless for Retro-Debian and DebianDog.
+# GNU GPL v3 applies. No warranty of any kind.
+# Based on next-save: https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/next-save
+# Option to save on exit in multiple directories on CD/DVD (RW +R -R).
+# FROM= line information: changes are in /live/cow in live-boot(2.0.15-1). In later live-boot versions
+# it is changed to /lib/live/mount/overlay and needs unmounting: Read more about this here (3.):
+# https://github.com/MintPup/DebianDog-Squeeze/blob/master/live-boot-2/Extra-options.md
+# In DebianDog all boot methods will create symlink /live/cow if needed and auto-unmount /lib/live/mount/overlay
+# Porteus-boot can't load multiple save directories yet. Works  well in live-boot-2 and live-boot-3 for with aufs.
+# In standard Debian the script will need the above /lib/live/mount/overlay mods and will work only with aufs.
+# The default overlay in Debian Live Stretch makes impossible using save directories at the moment.
+
+cleanupdir() {
+echo "Cleaning..."
+rm -rf "$DEST"/etc/fltk
+rm -rf "$DEST"/etc/network
+rm -f "$DEST"/etc/blkid.tab
+rm -f "$DEST"/etc/blkid.tab.old
+rm -f "$DEST"/etc/fstab
+rm -f "$DEST"/etc/mtab
+rm -f "$DEST"/var/cache/debconf/templates.dat-old
+rm -rf "$DEST"/var/log
+rm -rf "$DEST"/var/lib/apt/lists
+rm -rf "$DEST"/var/lib/sudo
+rm -f "$DEST"/var/lib/urandom/random-seed
+rm -rf "$DEST"/var/lib/xkb
+rm -f "$DEST"/var/lib/dpkg/available-old
+rm -f "$DEST"/var/lib/dpkg/status-old
+rm -f "$DEST"/var/lib/lock
+rm -rf "$DEST""$HOME"/.fltk
+rm -f "$DEST""$HOME"/.local/share/recently-used.xbel
+rm -rf "$DEST""$HOME"/.local/share/Trash
+
+rm -rf casper cdrom live cow dev tmp mnt media run lost+found live var/lib/dpkg/updates var/lib/dpkg/tmp var/lib/dpkg/lock var/run var/lock lib/modules/2.6.18-6-486/kernel live lib/live/mount cdrom proc sys initrd persistence.conf var/lib/apt/lists var/cache/apt var/log
+
+rm -r "$DEST"/etc/rc.d/BOOTCONFIG
+rm -r "$DEST"/etc/rc.d/PUPSTATE
+rm -f "$DEST"/etc/DISTRO_SPECS
+rm -rf "$DEST"/initrd
+rm -rf "$DEST"/lib/consolefonts
+rm -rf "$DEST"/lib/keymaps
+
+rm -f "$DEST"/var/lib/alsa/asound.state
+rm -f "$DEST""$HOME"/.bash_history
+rm -f "$DEST""$HOME"/.xsession-errors
+rm -rf "$DEST""$HOME"/.cache
+rm -rf "$DEST""$HOME"/.thumbnails
+rm -f "$DEST"/etc/blkid-cache*
+#rm -f "$DEST"/etc/resolv.conf #removing breaks the official resolvconf package functions.
+rm -rf "$DEST"/etc/udev/rules.d/70-persistent*
+rm -f "$DEST"/var/lib/dhcp/dhclient.eth0.leases
+rm -f "$DEST"/var/lib/dhcpcd/*.lease
+rm -fr "$DEST"/var/lib/aptitude/*
+rm -fr "$DEST"/var/lib/dpkg/updates/tmp.i
+rm -fr "$DEST"/var/cache/debconf/*.dat-old
+rm -f "$DEST"/etc/blkid.tab
+rm -f "$DEST"/etc/blkid.tab.old
+rm -rf "$DEST"/var/cache/apt-show-versions/*
+rm -fr "$DEST"/var/backups/*
+rm -f "$DEST"/var/log/* 2> /dev/null
+rm -fr "$DEST"/scripts
+
+#Etch section start:
+rm -rf "$DEST"/etc/udev/rules.d/z25_persistent*
+rm -fr "$DEST"/var/lib/dhcp
+rm -fr "$DEST"/var/lib/dhcpcd
+rm -fr "$DEST"/var/lib/urandom
+rm -fr "$DEST"/var/run/*
+rm -fr "$DEST"/var/tmp/*
+rm -fr "$DEST"/var/lib/dhcp3
+rm -f "$DEST""$HOME"/.serverauth*
+echo ""
+}
+
+rmlocale() {
+rm -fr "$DEST"/usr/share/man
+rm -fr "$DEST"/usr/share/doc
+rm -fr "$DEST"/usr/share/doc-base
+rm -fr "$DEST"/usr/share/info
+rm -fr "$DEST"/usr/share/locale/*
+}
+
+burnall () {
+#source: http://www.murga-linux.com/puppy/viewtopic.php?p=77031&sid=04417d050f1e926a4195a84dba950aaa#77031
+growisofs -M "$DVDDRV" -D -R -l -new-dir-mode 0755 -graft-points live/"$NEWDIR=$DEST"
+}
+
+if ! which growisofs ; then
+echo "Install dvd+rw-tools and run the script again."
+exit
+fi
+
+if  grep -q persistent /proc/cmdline || grep -q persistence /proc/cmdline; then
+echo
+echo "Boot without persistent or persistence and run the script again."
+echo
+exit
+fi
+
+if [ "$(whoami)" != "root" ]; then
+echo "You have to run this script as Superuser."
+exit
+fi
+
+#DRV= and DVDDRV= mods from: http://www.linuxquestions.org/questions/programming-9/detect-a-cd-rom-device-in-a-bash-shell-script-749154/
+DRV="$(cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}')"
+DVDDRV=/dev/"$(cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}')"
+
+read -p "Confirm the optical drive name is $DVDDRV (y/n)?" choose
+case "$choose" in
+  y|Y ) echo "Continue...";;
+  * ) exit;;
+esac
+
+echo "Cleaning /var/cache/apt/archives..."
+apt-get clean
+
+mkdir -p /media/"$DRV"
+umount /media/"$DRV" 2>/dev/null #in case already mounted in /media
+umount /mnt/"$DRV"   2>/dev/null #in case already mounted in /mnt (from desktop_drive_icons)
+mount "$DVDDRV" /media/"$DRV" || exit 1
+
+FROM="/live/cow"
+BASE=/media/"$DRV"
+DIR="10.dir"
+
+
+echo
+echo "DebianDog multisession CD/DVD save"
+echo "Save session in subfolders from 10.dir to 99.dir"
+echo "Make sure you have enough free space in RAM and on CD/DVD."
+echo "No warranty of any kind! Use at your own risk!"
+echo
+
+read -p "Do you want to continue (y/n)?" choose
+case "$choose" in
+  y|Y ) echo "Continue...";;
+  * ) exit;;
+esac
+
+#NEXT= line source: https://stackoverflow.com/questions/1587059/bash-find-highest-numbered-filename-in-a-directory-where-names-start-with-digit
+NEXT=$(ls "$BASE"/live | grep ".dir" | sort -rn | awk '{FS="_"; printf "%0d.dir\n",$1+1;exit}')
+
+
+if [ ! -d "$BASE/live/$DIR" ]; then
+echo Saving session in /tmp/"$DIR" ...
+mkdir /tmp/"$DIR"
+cp -ap "$FROM"/* /tmp/"$DIR"
+sync
+NEWDIR="$DIR"
+DEST=/tmp/"$DIR"
+cd "$DEST"
+cleanupdir
+cd "$HOME"
+umount /media/"$DRV"
+rmdir /media/"$DRV"
+else
+echo Saving session in /tmp/"$NEXT" ...
+mkdir /tmp/"$NEXT"
+cp -ap "$FROM"/* /tmp/"$NEXT"
+sync
+NEWDIR="$NEXT"
+DEST=/tmp/"$NEXT"
+cd "$DEST"
+cleanupdir
+cd "$HOME"
+umount /media/"$DRV"
+rmdir /media/"$DRV"
+fi
+
+echo
+read -p "Remove man, doc and locale files (y/n)?" choose
+case "$choose" in
+  y|Y) cd "$DEST" && rmlocale;;
+  * ) echo "Keep man, doc, locales.";;
+esac
+
+read -p "Check out $DEST and confirm burning. (y/n)?" choose
+case "$choose" in
+  y|Y) burnall;;
+  * ) exit;;
+esac
+
+echo "Done."
+exit
