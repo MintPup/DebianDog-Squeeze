@@ -333,7 +333,7 @@ Better test using RW CD/DVD.
 
 Burn DebianDog on CD/DVD in multisession mode. 
 
-Boot DebianDog with live boot using toram parameter (you will have to edit manually toram=01-filesystem.squashfs to toram only). This will copy the CD/DVD content to ram loading all .squashfs, folders ending with .dir to ram leaving the CD/DVD disk unmounted. Do some changes and save the session on the CD/DVD using this command in terminal: [command source](http://www.murga-linux.com/puppy/viewtopic.php?p=77031&sid=04417d050f1e926a4195a84dba950aaa#77031)
+Boot DebianDog with live boot using **toram** parameter (you will have to edit manually toram=01-filesystem.squashfs to toram only). This will copy the CD/DVD content to ram loading all .squashfs, folders ending with .dir to ram leaving the CD/DVD disk unmounted. Do some changes and save the session on the CD/DVD using this command in terminal: [command source](http://www.murga-linux.com/puppy/viewtopic.php?p=77031&sid=04417d050f1e926a4195a84dba950aaa#77031)
 
 
 ```
@@ -346,6 +346,32 @@ Save new session using 11.dir, 12.dir etc. You can use as many folders as you wi
 Could be used with porteus-boot using something like [next-save](https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/next-save) with mods to copy the session in RAM, create squashfs and write the squashfs to the CD/DVD. 
 
 I will modify the script later for saving sessions on CD or DVD for DebianDog.
+
+The first version of [savedir2dvd](https://github.com/MintPup/DebianDog-Squeeze/blob/master/scripts/savedir2dvd) works with live-boot2 and live-boot-3 saving sessions in subfolders inside /live on multisession DVD. The command posted above works fine for direct burning /live/cow content on the DVD each session, but this script makes a copy with some cleaning and confirmation prompts (could be easy changed to make squashfs from the folder for porteus-boot support). Works well for my needs but save on DVD is still new area for me. Use it on your own risk!
+
+Copy and cleanup the folder before burning the session gives option to delete manually personal files and edit something before burning. The session size is much smaller compared to direct /live/cow burning and on next boot you will need less RAM space compared to direct /live/cow burning.
+
+At some point your RAM probably will not be enough for new sessions and you will have to boot without toram using the DVD (much slower system compared to copy to RAM). And since you can't unmount the DVD anymore you can't save more sessions to it. So be careful saving too many sessions and keep in mind how much RAM your computer have.
+
+One good option I see using multisession DVD (example for DebianDog-Squeeze for now):
+
+Make remastered DebianDog-Squeeze iso version for your needs using the modified [initrd1.img](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd1.img) and [initrd.img](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd.img) and savedir2dvd scripts and burn this version as iso to multisession DVD (RW recommended). The point to change initrd1.img and initrd.img is because they include the changes in **toram** below and will copy the /live content from the DVD in RAM instead the whole DVD content. This means you can make folder like for example /sfs at top of the DVD and burn there session with any squashfs modules for Squeeze like DEVX, custom modules made with apt2sfs etc. I guess over 4Gb DVD size is enough for extra squashfs modules (more than enough for me). If you have the folder with squashfs modules on your hard drive like /media/sda1/sfs you can burn it to the DVD with:
+
+```
+growisofs -M /dev/sr0 -D -R -l -new-dir-mode 0755 -graft-points sfs/=/media/sda1/sfs
+```
+
+Now booting the DVD with **toram** only parameter will copy and load the content of /live in RAM. Any new session you can save with savedir2dvd script and will be auto-loaded on boot. If you need extra module just mount the DVD and load on the fly the module from /sfs folder you need. You can burn new session with new modules inside /sfs as long as you have space on the DVD.
+
+What if something wrong happents and you can't boot after saving session? Just use **toram=01-filesystem.squashfs** parameter and only the main module will be loaded. Check out what is wrong with the last saved session folder and fix it burning next session with the fix. For example if it is incompatible xorg module burn the next session using the old module. Or if you deleted by mistake some important system file marked as .wh. in your last saved folder simply make new session with copy of this file. It will be available again after reboot.
+
+If you don't understand what I wrote above better skip reading and don't play with saving sessions on DVD. Just keep in mind it is an option you can use after spending some time to learn more about and do your own experiments.
+
+All above could be used with standard Debian Squeeze, Wheezy, Jessie. The script savedir2dvd works with dash but it still needs aufs boot. For Debian Stretch y can't use it because aufs is replaced with overlay and overlay doesn't support multiple .dir folders in /live loading yet. The only way to use it in Stretch is to build aufs module and boot with aufs. Still I can't tell if the changes in live-boot scripts the last year keep .dir loading working well. I haven't experimented save session on DVD with Stretch using aufs yet.
+
+![savedir2dvd.jpg](https://raw.githubusercontent.com/MintPup/DebianDog-Squeeze/master/Screenshots/Utilities/savedir2dvd.jpg)
+
+
 
 **6. toram** small change:
 
