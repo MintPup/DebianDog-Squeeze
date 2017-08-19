@@ -396,3 +396,36 @@ root (hd0,0)
 kernel /vmlinuz1 boot=live fetch=https://github.com/DebianDog/Squeeze/releases/download/v.1.0/DebianDog-Squeeze-hybrid-30.04.2016.iso
 initrd /initrd1.img
 ```
+
+
+**8. Universal initrd1.img to boot different linux using live-boot-(2.0.15-1):**
+
+Needs small change in /scripts/live after the remount,rw line and includes full kernel modules in /lib/modules/$(uname -r).
+
+```
+	# Move to the new root filesystem so that programs there can get at it.
+	if [ ! -d /root/live/image ]
+	then
+		mkdir -p /root/live/image
+		mount --move /live/image /root/live/image
+	    mount -o remount,rw /root/live/image #saintless - remount if possible boot partition in rw without persistent option.
+	fi
+	#20170819 saintless: move /lib/modules/$(uname -r) in RAM if missing - the main squashfs doesn't need to include kernel.
+	#     Universal boot initrd1.img. Tested to boot DebianDog Jessie, Wheeze, Stretch, MintPup-Trusty.
+	#     Works for webbot using fetch= parameter but needs enough RAM for the iso + 80Mb kernel copy.
+	if [ ! -d /root/lib/modules/$(uname -r) ]
+	then
+	    mv /lib/modules/* /root/lib/modules/
+	fi
+
+```
+
+Checks for the same kernel in main squashfs or save file. If it exists boots normal using the kernel from the main module. If the kernel in the main module is different or there is no kernel included - copy/move /lib/modules/$(uname -r) from initrd1.img in RAM.
+
+This gives option to test different linux using the same [initrd1.img-full](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/initrd1.img-full) and [vmlinuz1](https://github.com/MintPup/DebianDog-Squeeze/releases/download/v.2.1/vmlinuz1). Works also for webboot using fetch= parameter. Tested to boot DebianDog Wheezy, Jessie, Stretch, MintPup-Trusty but needs enough RAM for the iso size + 80Mb for the kernel copy.
+
+Useful for me sometimes to test quickly new linux as frugal install using my favorite boot method with well working kernel for my hardware.
+
+
+
+
