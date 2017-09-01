@@ -10,7 +10,7 @@ copy_live_to ()
 
 	if [ -z "${MODULETORAM}" ]
 	then
-		size=$(fs_size "" ${copyfrom}/ "used")
+		size=$(fs_size "" ${copyfrom}/${LIVE_MEDIA_PATH} "used") #20170901 saintless: correct ramdrive size after the change to copy only /live folder to RAM.
 	else
 		MODULETORAMFILE="${copyfrom}/${LIVE_MEDIA_PATH}/${MODULETORAM}"
 
